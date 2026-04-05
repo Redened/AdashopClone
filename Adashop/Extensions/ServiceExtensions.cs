@@ -1,5 +1,7 @@
+using Adashop.Common.Helpers.CategoryTree;
+using Adashop.Common.Helpers.ExchangeRateAPI;
+using Adashop.Common.Mappers;
 using Adashop.Common.Services.ExchangeRateAPI;
-using Adashop.Common.Services.Helpers;
 using Adashop.Common.Services.JWT;
 using Adashop.Common.Services.SMTP;
 using Adashop.Data;
@@ -22,7 +24,6 @@ public static class ServiceExtensions
     {
         services.AddControllers();
         services.AddEndpointsApiExplorer();
-
         services.AddSwaggerGen(options =>
         {
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -46,31 +47,26 @@ public static class ServiceExtensions
         services.AddDbContext<DataContext>(options => options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
 
         services.AddAuth(config);
-
         services.AddMemoryCache();
-
         services.AddValidatorsFromAssemblyContaining<Program>();
 
         services.AddHangfire(options => options.UseSqlServerStorage(config.GetConnectionString("DefaultConnection")));
         services.AddHangfireServer();
 
-        services.AddHttpClient<ICurrencyService, CurrencyService>();
-
+        services.AddHttpClient<IExchangeRateService, ExchangeRateService>();
         services.AddScoped<IEmailJobService, EmailJobService>();
         services.AddScoped<ISMTPService, SMTPService>();
         services.AddScoped<IJWTService, JWTService>();
 
-        services.AddScoped<ICategoryHelper, CategoryHelper>();
-        services.AddScoped<ICurrencyHelper, CurrencyHelper>();
+        services.AddScoped<IExchangeRateHelper, ExchangeRateHelper>();
+        services.AddScoped<ICategoryTreeHelper, CategoryTreeHelper>();
         services.AddScoped<IMapHelper, MapHelper>();
 
         services.AddScoped<IAuthServices, AuthServices>();
         services.AddScoped<IProductServices, ProductServices>();
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IOrderService, OrderService>();
-
         services.AddScoped<IAdminServices, AdminServices>();
-
 
         return services;
     }

@@ -1,17 +1,7 @@
 ﻿using Adashop.DTOs;
 using Adashop.Entities;
 
-namespace Adashop.Common.Services.Helpers;
-
-public interface IMapHelper
-{
-    ProductDetailResponse MapProductDetailResponse( Product product );
-    ProductMinimalResponse MapProductMinimalResponse( Product product );
-    CategoryDetailResponse MapCategoryDetailResponse( Category category );
-
-    UserMinimalResponse MapUserMinimalResponse( User user );
-    UserDetailResponse MapUserDetailResponse( User user, CartResponse? cart, List<OrderResponse> orders );
-}
+namespace Adashop.Common.Mappers;
 
 public class MapHelper : IMapHelper
 {
@@ -73,6 +63,7 @@ public class MapHelper : IMapHelper
         );
     }
 
+
     public UserMinimalResponse MapUserMinimalResponse( User user )
     {
         return new UserMinimalResponse(
@@ -104,6 +95,46 @@ public class MapHelper : IMapHelper
             CreatedAt: user.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
             Cart: cart,
             Orders: orders
+        );
+    }
+
+
+    public CartItemResponse MapCartItemResponse( CartItem cartItem, string currency )
+    {
+        var thumbnailUrl = cartItem.Product.Images.FirstOrDefault(i => i.IsMain)?.ImageUrl;
+        var subTotal = cartItem.Product.Price * cartItem.Quantity;
+
+        return new CartItemResponse(
+            Id: cartItem.Id,
+            ProductId: cartItem.ProductId,
+            ProductName: cartItem.Product.Name,
+            ProductPrice: cartItem.Product.Price,
+            ProductThumbnailUrl: thumbnailUrl,
+            Quantity: cartItem.Quantity,
+            SubTotal: subTotal,
+            Currency: currency
+        );
+    }
+
+    public OrderResponse MapOrderResponse( Order order, string currency )
+    {
+        var items = order.OrderItems.Select(oi => new OrderItemResponse(
+            Id: oi.Id,
+            ProductId: oi.ProductId,
+            ProductName: oi.ProductName,
+            ProductPriceSnapshot: oi.ProductPriceSnapshot,
+            Quantity: oi.Quantity,
+            SubTotal: oi.ProductPriceSnapshot * oi.Quantity
+        )).ToList();
+
+        return new OrderResponse(
+            Id: order.Id,
+            Status: order.Status.ToString(),
+            ShippingAddress: order.ShippingAddress,
+            TotalPrice: order.TotalPrice,
+            Items: items,
+            CreatedAt: order.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+            Currency: currency
         );
     }
 }

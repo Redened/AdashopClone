@@ -3,7 +3,6 @@ using Adashop.Common.Services.JWT;
 using Adashop.Common.Services.SMTP;
 using Adashop.Data;
 using Adashop.DTOs;
-using Adashop.Entities;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
@@ -66,7 +65,7 @@ public class AuthServices : IAuthServices
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-        var user = new User()
+        var user = new Entities.User()
         {
             Email = normalizedEmail,
             PasswordHash = passwordHash,
@@ -144,6 +143,8 @@ public class AuthServices : IAuthServices
 
         user.RefreshToken = GenerateRefreshToken();
         user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(REFRESH_TOKEN_EXPIRY_DAYS);
+
+        user.UpdatedAt = DateTime.UtcNow;
 
         try
         {
@@ -230,6 +231,7 @@ public class AuthServices : IAuthServices
         user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(REFRESH_TOKEN_EXPIRY_DAYS);
 
         user.LastLoginAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
 
         try
         {
@@ -277,6 +279,8 @@ public class AuthServices : IAuthServices
         user.RefreshToken = GenerateRefreshToken();
         user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(REFRESH_TOKEN_EXPIRY_DAYS);
 
+        user.UpdatedAt = DateTime.UtcNow;
+
         try
         {
             await _DB.SaveChangesAsync();
@@ -305,6 +309,8 @@ public class AuthServices : IAuthServices
 
         user.RefreshToken = null;
         user.RefreshTokenExpiry = null;
+
+        user.UpdatedAt = DateTime.UtcNow;
 
         try
         {
@@ -406,6 +412,8 @@ public class AuthServices : IAuthServices
         user.RefreshToken = GenerateRefreshToken();
         user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
 
+        user.UpdatedAt = DateTime.UtcNow;
+
         try
         {
             await _DB.SaveChangesAsync();
@@ -451,6 +459,8 @@ public class AuthServices : IAuthServices
 
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+
+        user.UpdatedAt = DateTime.UtcNow;
 
         try
         {

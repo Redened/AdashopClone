@@ -3,20 +3,13 @@ using Adashop.DTOs;
 using Adashop.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Adashop.Common.Services.Helpers;
+namespace Adashop.Common.Helpers.CategoryTree;
 
-public interface ICategoryHelper
-{
-    Task<List<BreadcrumbResponse>> GetCategoryBreadcrumbs( int categoryId );
-    Task<List<int>> GetCategoryWithDescendants( int categoryId );
-    CategoryTreeResponse BuildCategoryTree( Category category, List<Category> allCategories );
-}
-
-public class CategoryHelper : ICategoryHelper
+public class CategoryTreeHelper : ICategoryTreeHelper
 {
     private readonly DataContext _DB;
 
-    public CategoryHelper( DataContext DB ) => _DB = DB;
+    public CategoryTreeHelper( DataContext DB ) => _DB = DB;
 
 
     public async Task<List<BreadcrumbResponse>> GetCategoryBreadcrumbs( int categoryId )

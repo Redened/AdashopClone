@@ -1,5 +1,6 @@
-﻿using Adashop.Common.Results;
-using Adashop.Common.Services.Helpers;
+﻿using Adashop.Common.Helpers.CategoryTree;
+using Adashop.Common.Mappers;
+using Adashop.Common.Results;
 using Adashop.Data;
 using Adashop.DTOs;
 using Adashop.Entities;
@@ -18,9 +19,8 @@ public class AdminServices : IAdminServices
     private readonly IValidator<UpdateCategoryRequest> _updateCategoryValidator;
     private readonly IValidator<CreateProductImageRequest> _createProductImageValidator;
     private readonly IValidator<UpdateProductImageRequest> _updateProductImageValidator;
-    private readonly ICategoryHelper _categoryHelper;
-    private readonly ICurrencyHelper _currencyHelper;
-    private readonly IMapHelper _mapHelper;
+    private readonly ICategoryTreeHelper _categoryTreeHelper;
+    private readonly IMapHelper _MAP;
 
     public AdminServices(
         DataContext DB,
@@ -31,9 +31,8 @@ public class AdminServices : IAdminServices
         IValidator<UpdateCategoryRequest> updateCategoryValidator,
         IValidator<CreateProductImageRequest> createProductImageValidator,
         IValidator<UpdateProductImageRequest> updateProductImageValidator,
-        ICategoryHelper categoryHelper,
-        ICurrencyHelper currencyHelper,
-        IMapHelper mapHelper )
+        IMapHelper MAP,
+        ICategoryTreeHelper categoryTreeHelper )
     {
         _DB = DB;
         _LOG = LOG;
@@ -43,9 +42,8 @@ public class AdminServices : IAdminServices
         _updateCategoryValidator = updateCategoryValidator;
         _createProductImageValidator = createProductImageValidator;
         _updateProductImageValidator = updateProductImageValidator;
-        _categoryHelper = categoryHelper;
-        _currencyHelper = currencyHelper;
-        _mapHelper = mapHelper;
+        _MAP = MAP;
+        _categoryTreeHelper = categoryTreeHelper;
     }
 
     public async Task<Result<ProductDetailResponse>> CreateProduct( CreateProductRequest request )
@@ -93,8 +91,8 @@ public class AdminServices : IAdminServices
                 return Result<ProductDetailResponse>.Error(500, "Failed to retrieve created product");
             }
 
-            var response = _mapHelper.MapProductDetailResponse(completeProduct);
-            var breadcrumbs = await _categoryHelper.GetCategoryBreadcrumbs(completeProduct.CategoryId);
+            var response = _MAP.MapProductDetailResponse(completeProduct);
+            var breadcrumbs = await _categoryTreeHelper.GetCategoryBreadcrumbs(completeProduct.CategoryId);
             response = response with { Breadcrumbs = breadcrumbs };
 
             await transaction.CommitAsync();
@@ -154,6 +152,8 @@ public class AdminServices : IAdminServices
             if ( request.CategoryId.HasValue )
                 product.CategoryId = request.CategoryId.Value;
 
+            product.UpdatedAt = DateTime.UtcNow;
+
             await _DB.SaveChangesAsync();
 
             var updatedProduct = await _DB.Products
@@ -169,8 +169,8 @@ public class AdminServices : IAdminServices
                 return Result<ProductDetailResponse>.Error(500, "Failed to retrieve created product");
             }
 
-            var response = _mapHelper.MapProductDetailResponse(updatedProduct);
-            var breadcrumbs = await _categoryHelper.GetCategoryBreadcrumbs(updatedProduct.CategoryId);
+            var response = _MAP.MapProductDetailResponse(updatedProduct);
+            var breadcrumbs = await _categoryTreeHelper.GetCategoryBreadcrumbs(updatedProduct.CategoryId);
             response = response with { Breadcrumbs = breadcrumbs };
 
             await transaction.CommitAsync();
@@ -261,7 +261,7 @@ public class AdminServices : IAdminServices
                 return Result<CategoryDetailResponse>.Error(500, "Failed to retrieve created product");
             }
 
-            var response = _mapHelper.MapCategoryDetailResponse(completeCategory);
+            var response = _MAP.MapCategoryDetailResponse(completeCategory);
 
             await transaction.CommitAsync();
             _LOG.LogInformation("Category created: {CategoryId} - {CategoryName}", category.Id, category.Name);
@@ -320,6 +320,8 @@ public class AdminServices : IAdminServices
             if ( request.ParentCategoryId != null )
                 category.ParentCategoryId = request.ParentCategoryId;
 
+            category.UpdatedAt = DateTime.UtcNow;
+
             await _DB.SaveChangesAsync();
 
             var updatedCategory = await _DB.Categories
@@ -336,7 +338,7 @@ public class AdminServices : IAdminServices
                 return Result<CategoryDetailResponse>.Error(500, "Failed to retrieve created product");
             }
 
-            var response = _mapHelper.MapCategoryDetailResponse(updatedCategory);
+            var response = _MAP.MapCategoryDetailResponse(updatedCategory);
 
             await transaction.CommitAsync();
             _LOG.LogInformation("Category updated: {CategoryId} - {CategoryName}", category.Id, category.Name);
@@ -470,6 +472,8 @@ public class AdminServices : IAdminServices
             if ( request.SortOrder.HasValue )
                 productImage.SortOrder = request.SortOrder.Value;
 
+            productImage.UpdatedAt = DateTime.UtcNow;
+
             _DB.ProductImages.Update(productImage);
             await _DB.SaveChangesAsync();
 
@@ -581,7 +585,7 @@ public class AdminServices : IAdminServices
                 Currency: "GEL"
             )).ToList();
 
-            var response = _mapHelper.MapUserDetailResponse(user, cartResponse, orders);
+            var response = _MAP.MapUserDetailResponse(user, cartResponse, orders);
             return Result<UserDetailResponse>.Success(200, response);
         }
         catch ( Exception ex )
@@ -601,7 +605,7 @@ public class AdminServices : IAdminServices
                 .OrderByDescending(u => u.CreatedAt)
                 .ToListAsync();
 
-            var userResponses = users.Select(user => _mapHelper.MapUserMinimalResponse(user)).ToList();
+            var userResponses = users.Select(user => _MAP.MapUserMinimalResponse(user)).ToList();
 
             var response = new AllUsersResponse(userResponses, userResponses.Count);
             return Result<AllUsersResponse>.Success(200, response);

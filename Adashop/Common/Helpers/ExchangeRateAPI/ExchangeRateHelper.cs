@@ -1,22 +1,13 @@
 using Adashop.Common.Services.ExchangeRateAPI;
 using Adashop.DTOs;
 
-namespace Adashop.Common.Services.Helpers;
+namespace Adashop.Common.Helpers.ExchangeRateAPI;
 
-public interface ICurrencyHelper
+public class ExchangeRateHelper : IExchangeRateHelper
 {
-    Task<ProductDetailResponse> ApplyCurrencyConversion( ProductDetailResponse product, string currency );
-    Task<CartResponse> ApplyCurrencyConversion( CartResponse cart, string currency );
-    Task<OrderResponse> ApplyCurrencyConversion( OrderResponse order, string currency );
-    Task<List<ProductMinimalResponse>> ApplyCurrencyConversionToList( List<ProductMinimalResponse> products, string currency );
-    Task<List<OrderResponse>> ApplyCurrencyConversionToList( List<OrderResponse> orders, string currency );
-}
+    private readonly IExchangeRateService _EXCHANGE_RATE;
 
-public class CurrencyHelper : ICurrencyHelper
-{
-    private readonly ICurrencyService _CURRENCY;
-
-    public CurrencyHelper( ICurrencyService CURRENCY ) => _CURRENCY = CURRENCY;
+    public ExchangeRateHelper( IExchangeRateService EXCHANGE_RATE ) => _EXCHANGE_RATE = EXCHANGE_RATE;
 
 
     public async Task<ProductDetailResponse> ApplyCurrencyConversion( ProductDetailResponse product, string currency )
@@ -28,7 +19,7 @@ public class CurrencyHelper : ICurrencyHelper
 
         if ( currency.Equals("USD", StringComparison.OrdinalIgnoreCase) )
         {
-            var rate = await _CURRENCY.GetRateAsync();
+            var rate = await _EXCHANGE_RATE.GetRateAsync();
             var convertedPrice = Math.Round(product.Price * rate, 2);
             return product with { Price = convertedPrice, Currency = "USD" };
         }
@@ -45,7 +36,7 @@ public class CurrencyHelper : ICurrencyHelper
 
         if ( currency.Equals("USD", StringComparison.OrdinalIgnoreCase) )
         {
-            var rate = await _CURRENCY.GetRateAsync();
+            var rate = await _EXCHANGE_RATE.GetRateAsync();
             var convertedItems = cart.Items.Select(item => item with
             {
                 ProductPrice = Math.Round(item.ProductPrice * rate, 2),
@@ -69,7 +60,7 @@ public class CurrencyHelper : ICurrencyHelper
 
         if ( currency.Equals("USD", StringComparison.OrdinalIgnoreCase) )
         {
-            var rate = await _CURRENCY.GetRateAsync();
+            var rate = await _EXCHANGE_RATE.GetRateAsync();
             var convertedItems = order.Items.Select(item => item with
             {
                 ProductPriceSnapshot = Math.Round(item.ProductPriceSnapshot * rate, 2),
@@ -92,7 +83,7 @@ public class CurrencyHelper : ICurrencyHelper
 
         if ( currency.Equals("USD", StringComparison.OrdinalIgnoreCase) )
         {
-            var rate = await _CURRENCY.GetRateAsync();
+            var rate = await _EXCHANGE_RATE.GetRateAsync();
             return products.Select(p => p with
             {
                 Price = Math.Round(p.Price * rate, 2),
@@ -112,7 +103,7 @@ public class CurrencyHelper : ICurrencyHelper
 
         if ( currency.Equals("USD", StringComparison.OrdinalIgnoreCase) )
         {
-            var rate = await _CURRENCY.GetRateAsync();
+            var rate = await _EXCHANGE_RATE.GetRateAsync();
             return orders.Select(o =>
             {
                 var convertedItems = o.Items.Select(item => item with

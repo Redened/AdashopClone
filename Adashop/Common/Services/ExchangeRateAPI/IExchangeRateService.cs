@@ -1,6 +1,6 @@
 ﻿namespace Adashop.Common.Services.ExchangeRateAPI;
 
-public interface ICurrencyService
+public interface IExchangeRateService
 {
     Task<decimal> GetRateAsync();
 }

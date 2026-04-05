@@ -4,17 +4,17 @@ using System.Text.Json;
 
 namespace Adashop.Common.Services.ExchangeRateAPI;
 
-public class CurrencyService : ICurrencyService
+public class ExchangeRateService : IExchangeRateService
 {
     private readonly HttpClient _HTTP;
     private readonly IMemoryCache _CACHE;
-    private readonly ILogger<CurrencyService> _LOG;
+    private readonly ILogger<ExchangeRateService> _LOG;
     private readonly string _API_KEY;
     private const string CACHE_KEY = "exchange_rate_gel_usd";
     private const string BASE_CURRENCY = "GEL";
     private const string TARGET_CURRENCY = "USD";
 
-    public CurrencyService( HttpClient HTTP, IMemoryCache CACHE, ILogger<CurrencyService> LOG, IConfiguration config )
+    public ExchangeRateService( HttpClient HTTP, IMemoryCache CACHE, ILogger<ExchangeRateService> LOG, IConfiguration config )
     {
         _HTTP = HTTP;
         _CACHE = CACHE;

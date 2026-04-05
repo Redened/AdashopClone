@@ -1,5 +1,6 @@
-﻿using Adashop.Common.Results;
-using Adashop.Common.Services.Helpers;
+﻿using Adashop.Common.Helpers.ExchangeRateAPI;
+using Adashop.Common.Mappers;
+using Adashop.Common.Results;
 using Adashop.Data;
 using Adashop.DTOs;
 using Adashop.Entities;
@@ -14,20 +15,23 @@ public class CartService : ICartService
     private readonly ILogger<CartService> _LOG;
     private readonly IValidator<AddToCartRequest> _addToCartValidator;
     private readonly IValidator<UpdateCartItemRequest> _updateCartItemValidator;
-    private readonly ICurrencyHelper _currencyHelper;
+    private readonly IExchangeRateHelper _exchangeRateHelper;
+    private readonly IMapHelper _MAP;
 
     public CartService(
         DataContext DB,
         ILogger<CartService> LOG,
         IValidator<AddToCartRequest> addToCartValidator,
         IValidator<UpdateCartItemRequest> updateCartItemValidator,
-        ICurrencyHelper currencyHelper )
+        IMapHelper MAP,
+        IExchangeRateHelper exchangeRateHelper )
     {
         _DB = DB;
         _LOG = LOG;
         _addToCartValidator = addToCartValidator;
         _updateCartItemValidator = updateCartItemValidator;
-        _currencyHelper = currencyHelper;
+        _MAP = MAP;
+        _exchangeRateHelper = exchangeRateHelper;
     }
 
     public async Task<Result<CartResponse>> GetUserCart( int userId, string currency = "GEL" )
@@ -41,12 +45,12 @@ public class CartService : ICartService
                 .AsNoTracking()
                 .ToListAsync();
 
-            var items = cartItems.Select(c => MapCartItemResponse(c, "GEL")).ToList();
+            var items = cartItems.Select(c => _MAP.MapCartItemResponse(c, "GEL")).ToList();
             var totalPrice = items.Sum(i => i.SubTotal);
             var itemCount = items.Sum(i => i.Quantity);
 
             var response = new CartResponse(items, totalPrice, itemCount, "GEL");
-            var convertedResponse = await _currencyHelper.ApplyCurrencyConversion(response, currency);
+            var convertedResponse = await _exchangeRateHelper.ApplyCurrencyConversion(response, currency);
             return Result<CartResponse>.Success(200, convertedResponse);
         }
         catch ( Exception ex )
@@ -116,7 +120,7 @@ public class CartService : ICartService
                 return Result<CartItemResponse>.Error(500, "Failed to retrieve cart item");
             }
 
-            var response = MapCartItemResponse(updatedItem, "GEL");
+            var response = _MAP.MapCartItemResponse(updatedItem, "GEL");
             _LOG.LogInformation("Product added to cart: UserId={UserId}, ProductId={ProductId}, Quantity={Quantity}", userId, request.ProductId, request.Quantity);
             return Result<CartItemResponse>.Success(200, response);
         }
@@ -171,7 +175,7 @@ public class CartService : ICartService
                 return Result<CartItemResponse>.Error(500, "Failed to retrieve created product");
             }
 
-            var response = MapCartItemResponse(updatedItem, "GEL");
+            var response = _MAP.MapCartItemResponse(updatedItem, "GEL");
             _LOG.LogInformation("Cart item updated: CartItemId={CartItemId}, Quantity={Quantity}", cartItemId, request.Quantity);
             return Result<CartItemResponse>.Success(200, response);
         }
@@ -233,23 +237,4 @@ public class CartService : ICartService
             return Result<bool>.Error(500, "Failed to clear cart");
         }
     }
-
-
-    private CartItemResponse MapCartItemResponse( CartItem cartItem, string currency )
-    {
-        var thumbnailUrl = cartItem.Product.Images.FirstOrDefault(i => i.IsMain)?.ImageUrl;
-        var subTotal = cartItem.Product.Price * cartItem.Quantity;
-
-        return new CartItemResponse(
-            Id: cartItem.Id,
-            ProductId: cartItem.ProductId,
-            ProductName: cartItem.Product.Name,
-            ProductPrice: cartItem.Product.Price,
-            ProductThumbnailUrl: thumbnailUrl,
-            Quantity: cartItem.Quantity,
-            SubTotal: subTotal,
-            Currency: currency
-        );
-    }
 }
-

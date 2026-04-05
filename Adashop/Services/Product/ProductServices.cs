@@ -1,5 +1,7 @@
-﻿using Adashop.Common.Results;
-using Adashop.Common.Services.Helpers;
+﻿using Adashop.Common.Helpers.CategoryTree;
+using Adashop.Common.Helpers.ExchangeRateAPI;
+using Adashop.Common.Mappers;
+using Adashop.Common.Results;
 using Adashop.Data;
 using Adashop.DTOs;
 using Microsoft.EntityFrameworkCore;
@@ -10,21 +12,21 @@ public class ProductServices : IProductServices
 {
     private readonly DataContext _DB;
     private readonly ILogger<ProductServices> _LOG;
-    private readonly ICategoryHelper _categoryHelper;
-    private readonly ICurrencyHelper _currencyHelper;
-    private readonly IMapHelper _mapHelper;
+    private readonly ICategoryTreeHelper _categoryTreeHelper;
+    private readonly IExchangeRateHelper _exchangeRateHelper;
+    private readonly IMapHelper _MAP;
 
     private const int CATEGORY_PAGE_SIZE = 20;
     private const int SEARCH_PAGE_SIZE = 20;
     private const int SEARCH_SUGGESTION_LIMIT = 5;
 
-    public ProductServices( DataContext DB, ILogger<ProductServices> LOG, ICategoryHelper categoryHelper, ICurrencyHelper currencyHelper, IMapHelper mapHelper )
+    public ProductServices( DataContext DB, ILogger<ProductServices> LOG, ICategoryTreeHelper categoryTreeHelper, IExchangeRateHelper exchangeRateHelper, IMapHelper MAP )
     {
         _DB = DB;
         _LOG = LOG;
-        _categoryHelper = categoryHelper;
-        _currencyHelper = currencyHelper;
-        _mapHelper = mapHelper;
+        _categoryTreeHelper = categoryTreeHelper;
+        _exchangeRateHelper = exchangeRateHelper;
+        _MAP = MAP;
     }
 
     public async Task<Result<ProductDetailResponse>> GetProductById( int id, string currency = "GEL" )
@@ -42,11 +44,11 @@ public class ProductServices : IProductServices
                 return Result<ProductDetailResponse>.Error(404, "Product not found");
             }
 
-            var response = _mapHelper.MapProductDetailResponse(product);
-            var breadcrumbs = await _categoryHelper.GetCategoryBreadcrumbs(product.CategoryId);
+            var response = _MAP.MapProductDetailResponse(product);
+            var breadcrumbs = await _categoryTreeHelper.GetCategoryBreadcrumbs(product.CategoryId);
             response = response with { Breadcrumbs = breadcrumbs };
 
-            var convertedResponse = await _currencyHelper.ApplyCurrencyConversion(response, currency);
+            var convertedResponse = await _exchangeRateHelper.ApplyCurrencyConversion(response, currency);
 
             return Result<ProductDetailResponse>.Success(200, convertedResponse);
         }
@@ -68,7 +70,7 @@ public class ProductServices : IProductServices
                 return Result<PagedResult<ProductMinimalResponse>>.Error(404, "Category not found");
             }
 
-            var categoryIds = await _categoryHelper.GetCategoryWithDescendants(categoryId);
+            var categoryIds = await _categoryTreeHelper.GetCategoryWithDescendants(categoryId);
 
             var query = _DB.Products
                 .Include(p => p.Images)
@@ -82,8 +84,8 @@ public class ProductServices : IProductServices
                 .Take(CATEGORY_PAGE_SIZE)
                 .ToListAsync();
 
-            var items = products.Select(p => _mapHelper.MapProductMinimalResponse(p)).ToList();
-            items = await _currencyHelper.ApplyCurrencyConversionToList(items, currency);
+            var items = products.Select(p => _MAP.MapProductMinimalResponse(p)).ToList();
+            items = await _exchangeRateHelper.ApplyCurrencyConversionToList(items, currency);
 
             var result = new PagedResult<ProductMinimalResponse>(
                 items,
@@ -118,8 +120,8 @@ public class ProductServices : IProductServices
                 .Take(SEARCH_SUGGESTION_LIMIT)
                 .ToListAsync();
 
-            var items = products.Select(p => _mapHelper.MapProductMinimalResponse(p)).ToList();
-            items = await _currencyHelper.ApplyCurrencyConversionToList(items, currency);
+            var items = products.Select(p => _MAP.MapProductMinimalResponse(p)).ToList();
+            items = await _exchangeRateHelper.ApplyCurrencyConversionToList(items, currency);
 
             return Result<List<ProductMinimalResponse>>.Success(200, items);
         }
@@ -153,8 +155,8 @@ public class ProductServices : IProductServices
                 .Take(SEARCH_PAGE_SIZE)
                 .ToListAsync();
 
-            var items = products.Select(p => _mapHelper.MapProductMinimalResponse(p)).ToList();
-            items = await _currencyHelper.ApplyCurrencyConversionToList(items, currency);
+            var items = products.Select(p => _MAP.MapProductMinimalResponse(p)).ToList();
+            items = await _exchangeRateHelper.ApplyCurrencyConversionToList(items, currency);
 
             var result = new PagedResult<ProductMinimalResponse>(
                 items,
@@ -200,7 +202,7 @@ public class ProductServices : IProductServices
             var allCategories = await _DB.Categories.ToListAsync();
             var rootCategories = allCategories.Where(c => c.ParentCategoryId == null);
 
-            var tree = rootCategories.Select(c => _categoryHelper.BuildCategoryTree(c, allCategories)).ToList();
+            var tree = rootCategories.Select(c => _categoryTreeHelper.BuildCategoryTree(c, allCategories)).ToList();
 
             return Result<List<CategoryTreeResponse>>.Success(200, tree);
         }

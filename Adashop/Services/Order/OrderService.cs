@@ -1,5 +1,6 @@
-﻿using Adashop.Common.Results;
-using Adashop.Common.Services.Helpers;
+﻿using Adashop.Common.Helpers.ExchangeRateAPI;
+using Adashop.Common.Mappers;
+using Adashop.Common.Results;
 using Adashop.Data;
 using Adashop.DTOs;
 using Adashop.Enums;
@@ -13,18 +14,21 @@ public class OrderService : IOrderService
     private readonly DataContext _DB;
     private readonly ILogger<OrderService> _LOG;
     private readonly IValidator<CreateOrderRequest> _createOrderValidator;
-    private readonly ICurrencyHelper _currencyHelper;
+    private readonly IExchangeRateHelper _exchangeRateHelper;
+    private readonly IMapHelper _MAP;
 
     public OrderService(
         DataContext DB,
         ILogger<OrderService> LOG,
         IValidator<CreateOrderRequest> createOrderValidator,
-        ICurrencyHelper currencyHelper )
+        IExchangeRateHelper exchangeRateHelper,
+        IMapHelper MAP )
     {
         _DB = DB;
         _LOG = LOG;
         _createOrderValidator = createOrderValidator;
-        _currencyHelper = currencyHelper;
+        _exchangeRateHelper = exchangeRateHelper;
+        _MAP = MAP;
     }
 
     public async Task<Result<OrderResponse>> CreateOrder( int userId, CreateOrderRequest request )
@@ -101,7 +105,7 @@ public class OrderService : IOrderService
 
             await transaction.CommitAsync();
 
-            var response = MapOrderResponse(order, "GEL");
+            var response = _MAP.MapOrderResponse(order, "GEL");
             _LOG.LogInformation("Order created: OrderId={OrderId}, UserId={UserId}, TotalPrice={TotalPrice}", order.Id, userId, totalPrice);
             return Result<OrderResponse>.Success(201, response);
         }
@@ -128,8 +132,8 @@ public class OrderService : IOrderService
                 return Result<OrderResponse>.Error(404, "Order not found");
             }
 
-            var response = MapOrderResponse(order, "GEL");
-            var convertedResponse = await _currencyHelper.ApplyCurrencyConversion(response, currency);
+            var response = _MAP.MapOrderResponse(order, "GEL");
+            var convertedResponse = await _exchangeRateHelper.ApplyCurrencyConversion(response, currency);
             return Result<OrderResponse>.Success(200, convertedResponse);
         }
         catch ( Exception ex )
@@ -150,8 +154,8 @@ public class OrderService : IOrderService
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
 
-            var orderResponses = orders.Select(o => MapOrderResponse(o, "GEL")).ToList();
-            var convertedResponses = await _currencyHelper.ApplyCurrencyConversionToList(orderResponses, currency);
+            var orderResponses = orders.Select(o => _MAP.MapOrderResponse(o, "GEL")).ToList();
+            var convertedResponses = await _exchangeRateHelper.ApplyCurrencyConversionToList(orderResponses, currency);
             var response = new UserOrdersResponse(convertedResponses, convertedResponses.Count, currency);
 
             return Result<UserOrdersResponse>.Success(200, response);
@@ -201,8 +205,8 @@ public class OrderService : IOrderService
             await _DB.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            var response = MapOrderResponse(order, "GEL");
-            var convertedResponse = await _currencyHelper.ApplyCurrencyConversion(response, currency);
+            var response = _MAP.MapOrderResponse(order, "GEL");
+            var convertedResponse = await _exchangeRateHelper.ApplyCurrencyConversion(response, currency);
             _LOG.LogInformation("Order cancelled: OrderId={OrderId}, UserId={UserId}", orderId, userId);
             return Result<OrderResponse>.Success(200, convertedResponse);
         }
@@ -213,28 +217,4 @@ public class OrderService : IOrderService
             return Result<OrderResponse>.Error(500, "Failed to cancel order");
         }
     }
-
-
-    private OrderResponse MapOrderResponse( Entities.Order order, string currency )
-    {
-        var items = order.OrderItems.Select(oi => new OrderItemResponse(
-            Id: oi.Id,
-            ProductId: oi.ProductId,
-            ProductName: oi.ProductName,
-            ProductPriceSnapshot: oi.ProductPriceSnapshot,
-            Quantity: oi.Quantity,
-            SubTotal: oi.ProductPriceSnapshot * oi.Quantity
-        )).ToList();
-
-        return new OrderResponse(
-            Id: order.Id,
-            Status: order.Status.ToString(),
-            ShippingAddress: order.ShippingAddress,
-            TotalPrice: order.TotalPrice,
-            Items: items,
-            CreatedAt: order.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
-            Currency: currency
-        );
-    }
 }
-
