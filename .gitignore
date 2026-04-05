@@ -9,25 +9,6 @@ obj/
 *.sln.user
 *.user
 
-# Logs
-logs/
-*.log
-
-# Docker
-.docker/
-
-# Environment
-.env
-appsettings.*.json
-
 # IDE
 .vscode/
 *.code-workspace
-
-# Node (if using npm)
-node_modules/
-dist/
-
-# OS
-.DS_Store
-Thumbs.db
