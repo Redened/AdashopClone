@@ -1,9 +1,9 @@
-﻿using Adashop.Controllers;
+﻿using Adashop.DTOs;
 using Adashop.Services.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Adashop.DTOs;
+namespace Adashop.Controllers;
 
 [Authorize]
 [ApiController]

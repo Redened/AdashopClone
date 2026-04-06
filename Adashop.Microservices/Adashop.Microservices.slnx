@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/Gateway/" />
+  <Folder Name="/Services/">
+    <Project Path="Auth.API/Auth.API.csproj" />
+  </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="Adashop.Shared/Adashop.Shared.csproj" />
+  </Folder>
+  <Folder Name="/Tests/" />
+</Solution>
