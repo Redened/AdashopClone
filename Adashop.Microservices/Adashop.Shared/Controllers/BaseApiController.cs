@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
-namespace Auth.API.Controllers;
+namespace Adashop.Shared.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

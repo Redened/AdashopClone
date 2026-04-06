@@ -1,4 +1,5 @@
-﻿using Auth.API.DTOs;
+﻿using Adashop.Shared.Controllers;
+using Auth.API.DTOs;
 using Auth.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

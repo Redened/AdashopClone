@@ -1,13 +1,12 @@
 
-using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Product.API.Data;
-using Product.API.Services;
+using Order.API.Services;
+using Order.API.Data;
 using System.Text;
 
-namespace Product.API;
+namespace Order.API;
 
 public class Program
 {
@@ -15,12 +14,16 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddDbContext<ProductDbContext>(options =>
+        builder.Services.AddDbContext<OrderDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-        builder.Services.AddScoped<IProductService, ProductService>();
+        //builder.Services.AddHttpClient<IProductClient, ProductClient>(client =>
+        //{
+        //    var productApiUrl = builder.Configuration["ServiceUrls:ProductAPI"]!;
+        //    client.BaseAddress = new Uri(productApiUrl);
+        //});
 
-        builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+        builder.Services.AddScoped<IOrderService, OrderService>();
 
         var JWTSettings = builder.Configuration.GetSection("JWT");
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

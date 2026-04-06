@@ -23,7 +23,7 @@ public class User : BaseEntity
     public DateTime? PasswordResetTokenExpiry { get; set; }
 
 
-    public UserDetails? UserDetails { get; set; }
+    //public UserDetails? UserDetails { get; set; }
 
     //public List<CartItem> CartItems { get; set; } = [];
     //public List<Order> Orders { get; set; } = [];

@@ -1,10 +1,15 @@
 <Solution>
-  <Folder Name="/Gateway/" />
+  <Folder Name="/Gateway/">
+    <Project Path="API.Gateway/API.Gateway.csproj" Id="a27cb928-f7dc-4641-ae53-777567014d33" />
+  </Folder>
   <Folder Name="/Services/">
     <Project Path="Auth.API/Auth.API.csproj" />
+    <Project Path="Cart.API/Cart.API.csproj" Id="6e85ce76-5820-432e-9455-3bbc5179ea78" />
+    <Project Path="Order.API/Order.API.csproj" Id="44891eae-edc8-49c2-9731-d41cc34abc86" />
+    <Project Path="Product.API/Product.API.csproj" Id="598eed5c-1bd7-4399-af70-2ca9f1a33953" />
+    <Project Path="User.API/User.API.csproj" Id="ad627bb7-d6ab-465c-a985-a4bac6c12afd" />
   </Folder>
   <Folder Name="/Shared/">
     <Project Path="Adashop.Shared/Adashop.Shared.csproj" />
   </Folder>
-  <Folder Name="/Tests/" />
 </Solution>

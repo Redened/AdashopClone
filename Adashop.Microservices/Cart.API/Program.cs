@@ -1,13 +1,12 @@
 
-using FluentValidation;
+using Cart.API.Data;
+using Cart.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Product.API.Data;
-using Product.API.Services;
 using System.Text;
 
-namespace Product.API;
+namespace Cart.API;
 
 public class Program
 {
@@ -15,12 +14,16 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddDbContext<ProductDbContext>(options =>
+        builder.Services.AddDbContext<CartDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-        builder.Services.AddScoped<IProductService, ProductService>();
+        builder.Services.AddHttpClient<IProductClient, ProductClient>(client =>
+        {
+            var productApiUrl = builder.Configuration["ServiceUrls:ProductAPI"]!;
+            client.BaseAddress = new Uri(productApiUrl);
+        });
 
-        builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+        builder.Services.AddScoped<ICartService, CartService>();
 
         var JWTSettings = builder.Configuration.GetSection("JWT");
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

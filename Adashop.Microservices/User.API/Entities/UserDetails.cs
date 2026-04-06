@@ -1,6 +1,6 @@
 ﻿using Adashop.Shared.Entities;
 
-namespace Auth.API.Entities;
+namespace User.API.Entities;
 
 public class UserDetails : BaseEntity
 {
@@ -10,6 +10,6 @@ public class UserDetails : BaseEntity
     public string? PhoneNumber { get; set; }
 
 
-    public User User { get; set; } = null!;
+    //public User User { get; set; } = null!;
     public int UserId { get; set; }
 }
