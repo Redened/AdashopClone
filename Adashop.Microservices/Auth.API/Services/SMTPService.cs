@@ -16,8 +16,8 @@ public class SMTPService : ISMTPService
             throw new InvalidOperationException("Recipient email address is invalid");
 
 
-        var fromEmail = _CONFIGURATION["SMTP:FromEmail"] ?? throw new InvalidOperationException("SMTP:FromEmail is not configured");
-        var appPassword = _CONFIGURATION["SMTP:AppPassword"] ?? throw new InvalidOperationException("SMTP:AppPassword is not configured");
+        var username = _CONFIGURATION["SMTP:Username"] ?? throw new InvalidOperationException("SMTP:Username is not configured");
+        var password = _CONFIGURATION["SMTP:Password"] ?? throw new InvalidOperationException("SMTP:Password is not configured");
         var host = _CONFIGURATION["SMTP:Host"] ?? throw new InvalidOperationException("SMTP:Host is not configured");
         if ( !int.TryParse(_CONFIGURATION["SMTP:Port"], out var port) )
             throw new InvalidOperationException("SMTP:Port is not configured or invalid");
@@ -25,7 +25,7 @@ public class SMTPService : ISMTPService
 
         var message = new MimeMessage();
 
-        message.From.Add(new MailboxAddress("Adashop", fromEmail));
+        message.From.Add(new MailboxAddress("Adashop", username));
         message.To.Add(toEmail);
         message.Subject = subject;
         message.Body = new TextPart("html") { Text = body };
@@ -37,7 +37,7 @@ public class SMTPService : ISMTPService
         try
         {
             await smtp.ConnectAsync(host, port, SecureSocketOptions.StartTls);
-            await smtp.AuthenticateAsync(fromEmail, appPassword);
+            await smtp.AuthenticateAsync(username, password);
             await smtp.SendAsync(message);
         }
         finally
