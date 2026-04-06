@@ -1,4 +1,7 @@
-﻿namespace User.API.Services;
+﻿using Adashop.Shared.Results;
+using User.API.DTOs;
+
+namespace User.API.Services;
 
 public interface IUserService
 {

@@ -12,6 +12,7 @@ public class CartService : ICartService
 {
     private readonly CartDbContext _DB;
     private readonly ILogger<CartService> _LOG;
+    private readonly IProductClient _PRODUCT_CLIENT;
     private readonly IValidator<AddToCartRequest> _addToCartValidator;
     private readonly IValidator<UpdateCartItemRequest> _updateCartItemValidator;
     private readonly IExchangeRateHelper _exchangeRateHelper;
@@ -19,12 +20,14 @@ public class CartService : ICartService
     public CartService(
         CartDbContext DB,
         ILogger<CartService> LOG,
+        IProductClient PRODUCT_CLIENT,
         IValidator<AddToCartRequest> addToCartValidator,
         IValidator<UpdateCartItemRequest> updateCartItemValidator,
         IExchangeRateHelper exchangeRateHelper )
     {
         _DB = DB;
         _LOG = LOG;
+        _PRODUCT_CLIENT = PRODUCT_CLIENT;
         _addToCartValidator = addToCartValidator;
         _updateCartItemValidator = updateCartItemValidator;
         _exchangeRateHelper = exchangeRateHelper;
@@ -35,13 +38,11 @@ public class CartService : ICartService
         try
         {
             var cartItems = await _DB.CartItems
-                .Include(c => c.Product)
-                .ThenInclude(p => p.Images)
                 .Where(c => c.UserId == userId)
                 .AsNoTracking()
                 .ToListAsync();
 
-            var items = cartItems.Select(c => _MAP.MapCartItemResponse(c, "GEL")).ToList();
+            var items = cartItems.Select(c => MapCartItemResponse(c, "GEL")).ToList();
             var totalPrice = items.Sum(i => i.SubTotal);
             var itemCount = items.Sum(i => i.Quantity);
 
@@ -67,9 +68,7 @@ public class CartService : ICartService
 
         try
         {
-            var product = await _DB.Products
-                .Include(p => p.Images)
-                .FirstOrDefaultAsync(p => p.Id == request.ProductId);
+            var product = await _PRODUCT_CLIENT.GetProductAsync(request.ProductId);
 
             if ( product == null )
             {
@@ -105,8 +104,6 @@ public class CartService : ICartService
             await _DB.SaveChangesAsync();
 
             var updatedItem = await _DB.CartItems
-                .Include(c => c.Product)
-                .ThenInclude(p => p.Images)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == request.ProductId);
 
@@ -116,7 +113,7 @@ public class CartService : ICartService
                 return Result<CartItemResponse>.Error(500, "Failed to retrieve cart item");
             }
 
-            var response = _MAP.MapCartItemResponse(updatedItem, "GEL");
+            var response = MapCartItemResponse(updatedItem, "GEL");
             _LOG.LogInformation("Product added to cart: UserId={UserId}, ProductId={ProductId}, Quantity={Quantity}", userId, request.ProductId, request.Quantity);
             return Result<CartItemResponse>.Success(200, response);
         }
@@ -139,8 +136,6 @@ public class CartService : ICartService
         try
         {
             var cartItem = await _DB.CartItems
-                .Include(c => c.Product)
-                .ThenInclude(p => p.Images)
                 .FirstOrDefaultAsync(c => c.Id == cartItemId && c.UserId == userId);
 
             if ( cartItem == null )
@@ -149,7 +144,15 @@ public class CartService : ICartService
                 return Result<CartItemResponse>.Error(404, "Cart item not found");
             }
 
-            if ( cartItem.Product.Stock < request.Quantity )
+            var product = await _PRODUCT_CLIENT.GetProductAsync(cartItem.ProductId);
+
+            if ( product == null )
+            {
+                _LOG.LogWarning("Cart item Product not found: {CartItemId}", cartItemId);
+                return Result<CartItemResponse>.Error(404, "Cart item Product not found");
+            }
+
+            if ( product.Stock < request.Quantity )
             {
                 _LOG.LogWarning("Insufficient stock: {ProductId} requested {Quantity}", cartItem.ProductId, request.Quantity);
                 return Result<CartItemResponse>.Error(400, "Insufficient stock");
@@ -160,8 +163,6 @@ public class CartService : ICartService
             await _DB.SaveChangesAsync();
 
             var updatedItem = await _DB.CartItems
-                .Include(c => c.Product)
-                .ThenInclude(p => p.Images)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == cartItemId);
 
@@ -171,7 +172,7 @@ public class CartService : ICartService
                 return Result<CartItemResponse>.Error(500, "Failed to retrieve created product");
             }
 
-            var response = _MAP.MapCartItemResponse(updatedItem, "GEL");
+            var response = MapCartItemResponse(updatedItem, "GEL");
             _LOG.LogInformation("Cart item updated: CartItemId={CartItemId}, Quantity={Quantity}", cartItemId, request.Quantity);
             return Result<CartItemResponse>.Success(200, response);
         }
@@ -240,11 +241,11 @@ public class CartService : ICartService
         return new CartItemResponse(
             Id: cartItem.Id,
             ProductId: cartItem.ProductId,
-            ProductName: cartItem.Product.Name,
-            ProductPrice: cartItem.Product.Price,
-            ProductThumbnailUrl: cartItem.Product.Images.FirstOrDefault(i => i.IsMain)?.ImageUrl,
+            ProductName: cartItem.ProductName,
+            ProductPrice: cartItem.ProductPrice,
+            ProductThumbnailUrl: cartItem.ProductImageUrl,
             Quantity: cartItem.Quantity,
-            SubTotal: cartItem.Product.Price * cartItem.Quantity,
+            SubTotal: cartItem.ProductPrice * cartItem.Quantity,
             Currency: currency
         );
     }

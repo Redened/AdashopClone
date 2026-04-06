@@ -1,4 +1,5 @@
 ﻿using Adashop.Shared.Results;
+using Microsoft.EntityFrameworkCore;
 using Product.API.Data;
 using Product.API.DTOs;
 using Product.API.Helpers;
@@ -254,6 +255,67 @@ public class ProductService : IProductService
         {
             _LOG.LogError(ex, "Error retrieving category: {CategoryId}", id);
             return Result<CategoryDetailResponse>.Error(500, "Failed to retrieve category");
+        }
+    }
+
+    public async Task<Result<bool>> ReserveStockAsync(int productId, int quantity)
+    {
+        try
+        {
+            var product = await _DB.Products.FirstOrDefaultAsync(p => p.Id == productId);
+
+            if (product == null)
+            {
+                _LOG.LogWarning("Product not found for stock reservation: {ProductId}", productId);
+                return Result<bool>.Error(404, "Product not found");
+            }
+
+            if (product.Stock < quantity)
+            {
+                _LOG.LogWarning("Insufficient stock for reservation: {ProductId}, Required: {Quantity}, Available: {Stock}", 
+                    productId, quantity, product.Stock);
+                return Result<bool>.Error(400, "Insufficient stock");
+            }
+
+            product.Stock -= quantity;
+            _DB.Products.Update(product);
+            await _DB.SaveChangesAsync();
+
+            _LOG.LogInformation("Stock reserved: ProductId={ProductId}, Quantity={Quantity}, RemainingStock={Stock}", 
+                productId, quantity, product.Stock);
+            return Result<bool>.Success(200, true);
+        }
+        catch (Exception ex)
+        {
+            _LOG.LogError(ex, "Error reserving stock: {ProductId}", productId);
+            return Result<bool>.Error(500, "Failed to reserve stock");
+        }
+    }
+
+    public async Task<Result<bool>> ReleaseStockAsync(int productId, int quantity)
+    {
+        try
+        {
+            var product = await _DB.Products.FirstOrDefaultAsync(p => p.Id == productId);
+
+            if (product == null)
+            {
+                _LOG.LogWarning("Product not found for stock release: {ProductId}", productId);
+                return Result<bool>.Error(404, "Product not found");
+            }
+
+            product.Stock += quantity;
+            _DB.Products.Update(product);
+            await _DB.SaveChangesAsync();
+
+            _LOG.LogInformation("Stock released: ProductId={ProductId}, Quantity={Quantity}, TotalStock={Stock}", 
+                productId, quantity, product.Stock);
+            return Result<bool>.Success(200, true);
+        }
+        catch (Exception ex)
+        {
+            _LOG.LogError(ex, "Error releasing stock: {ProductId}", productId);
+            return Result<bool>.Error(500, "Failed to release stock");
         }
     }
 }

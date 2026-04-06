@@ -31,10 +31,8 @@ public class Program
                 };
             });
 
-        // Ocelot
         builder.Services.AddOcelot();
 
-        // CORS
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowAll", policy =>

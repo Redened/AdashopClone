@@ -1,9 +1,12 @@
 
+using Adashop.Common.Helpers.ExchangeRateAPI;
+using Adashop.Shared.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Product.API.Data;
+using Product.API.Helpers;
 using Product.API.Services;
 using System.Text;
 
@@ -18,6 +21,13 @@ public class Program
         builder.Services.AddDbContext<ProductDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+        builder.Services.AddHttpClient();
+        builder.Services.AddMemoryCache();
+        builder.Services.AddScoped<IExchangeRateService, ExchangeRateService>();
+        builder.Services.AddScoped<IExchangeRateHelper, ExchangeRateHelper>();
+
+        builder.Services.AddScoped<ICategoryTreeHelper, CategoryTreeHelper>();
+        builder.Services.AddScoped<IProductMapHelper, ProductMapHelper>();
         builder.Services.AddScoped<IProductService, ProductService>();
 
         builder.Services.AddValidatorsFromAssemblyContaining<Program>();

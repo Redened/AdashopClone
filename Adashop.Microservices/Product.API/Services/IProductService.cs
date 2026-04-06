@@ -12,5 +12,6 @@ public interface IProductService
     Task<Result<List<CategoryResponse>>> GetAllCategories();
     Task<Result<List<CategoryTreeResponse>>> GetCategoryTree();
     Task<Result<CategoryDetailResponse>> GetCategoryById( int id );
+    Task<Result<bool>> ReserveStockAsync(int productId, int quantity);
+    Task<Result<bool>> ReleaseStockAsync(int productId, int quantity);
 }
-

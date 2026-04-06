@@ -86,4 +86,32 @@ public class ProductController : ControllerBase
         var result = await _productService.GetCategoryTree();
         return StatusCode(result.Status, result);
     }
+
+    /// <summary>
+    /// Reserves stock for a product (called by Order.API when an order is created).
+    /// </summary>
+    /// <param name="id">The product ID</param>
+    /// <param name="request">Request containing quantity to reserve</param>
+    /// <returns>Success or error result</returns>
+    [HttpPut("{id}/reserve-stock")]
+    public async Task<IActionResult> ReserveStock(int id, [FromBody] StockRequest request)
+    {
+        var result = await _productService.ReserveStockAsync(id, request.Quantity);
+        return StatusCode(result.Status, result);
+    }
+
+    /// <summary>
+    /// Releases reserved stock for a product (called by Order.API when an order is cancelled).
+    /// </summary>
+    /// <param name="id">The product ID</param>
+    /// <param name="request">Request containing quantity to release</param>
+    /// <returns>Success or error result</returns>
+    [HttpPut("{id}/release-stock")]
+    public async Task<IActionResult> ReleaseStock(int id, [FromBody] StockRequest request)
+    {
+        var result = await _productService.ReleaseStockAsync(id, request.Quantity);
+        return StatusCode(result.Status, result);
+    }
 }
+
+public record StockRequest(int Quantity);

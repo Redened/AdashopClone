@@ -53,21 +53,6 @@
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "Bearer"
       }
-    },
-    {
-      "DownstreamPathTemplate": "/api/users/{everything}",
-      "DownstreamScheme": "https",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "localhost",
-          "Port": 5005
-        }
-      ],
-      "UpstreamPathTemplate": "/users/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer"
-      }
     }
   ],
   "GlobalConfiguration": {

@@ -13,12 +13,6 @@ public class AuthDbContext : DbContext
 
     protected override void OnModelCreating( ModelBuilder modelBuilder )
     {
-        //modelBuilder.Entity<User>()
-        //    .HasOne(u => u.UserDetails)
-        //    .WithOne(ud => ud.User)
-        //    .HasForeignKey<UserDetails>(ud => ud.UserId)
-        //    .OnDelete(DeleteBehavior.Cascade);
-
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Email)
             .IsUnique();

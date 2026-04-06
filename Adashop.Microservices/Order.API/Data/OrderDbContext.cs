@@ -14,13 +14,6 @@ public class OrderDbContext : DbContext
 
     protected override void OnModelCreating( ModelBuilder modelBuilder )
     {
-        // one-to-many / User and Order
-        //modelBuilder.Entity<Order>()
-        //    .HasOne(o => o.User)
-        //    .WithMany(u => u.Orders)
-        //    .HasForeignKey(o => o.UserId)
-        //    .OnDelete(DeleteBehavior.Restrict);
-
         // optimize queries filtering by order status and user
         modelBuilder.Entity<Entities.Order>()
             .HasIndex(o => o.Status);
@@ -38,13 +31,6 @@ public class OrderDbContext : DbContext
             .WithMany(o => o.OrderItems)
             .HasForeignKey(oi => oi.OrderId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // one-to-many / Product and OrderItem // restrict deletion of products that are part of existing orders
-        //modelBuilder.Entity<OrderItem>()
-        //    .HasOne<Product>()
-        //    .WithMany()
-        //    .HasForeignKey(oi => oi.ProductId)
-        //    .OnDelete(DeleteBehavior.Restrict);
 
         // prevents rounding issues in Order total price
         modelBuilder.Entity<OrderItem>()

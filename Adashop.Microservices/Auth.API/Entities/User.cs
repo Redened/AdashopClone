@@ -21,10 +21,4 @@ public class User : BaseEntity
 
     public string? PasswordResetToken { get; set; }
     public DateTime? PasswordResetTokenExpiry { get; set; }
-
-
-    //public UserDetails? UserDetails { get; set; }
-
-    //public List<CartItem> CartItems { get; set; } = [];
-    //public List<Order> Orders { get; set; } = [];
 }

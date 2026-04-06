@@ -1,6 +1,9 @@
 
+using Adashop.Shared.Services;
 using Cart.API.Data;
+using Cart.API.Helpers;
 using Cart.API.Services;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -23,6 +26,11 @@ public class Program
             client.BaseAddress = new Uri(productApiUrl);
         });
 
+        builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+        builder.Services.AddHttpClient();
+        builder.Services.AddMemoryCache();
+        builder.Services.AddScoped<IExchangeRateService, ExchangeRateService>();
+        builder.Services.AddScoped<IExchangeRateHelper, ExchangeRateHelper>();
         builder.Services.AddScoped<ICartService, CartService>();
 
         var JWTSettings = builder.Configuration.GetSection("JWT");

@@ -1,9 +1,12 @@
 
+using Adashop.Shared.Services;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Order.API.Services;
 using Order.API.Data;
+using Order.API.Helpers;
+using Order.API.Services;
 using System.Text;
 
 namespace Order.API;
@@ -17,12 +20,27 @@ public class Program
         builder.Services.AddDbContext<OrderDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-        //builder.Services.AddHttpClient<IProductClient, ProductClient>(client =>
-        //{
-        //    var productApiUrl = builder.Configuration["ServiceUrls:ProductAPI"]!;
-        //    client.BaseAddress = new Uri(productApiUrl);
-        //});
+        builder.Services.AddHttpClient<IProductClient, ProductClient>(client =>
+        {
+            var productApiUrl = builder.Configuration["ServiceUrls:ProductAPI"]!;
+            client.BaseAddress = new Uri(productApiUrl);
+        });
 
+        builder.Services.AddHttpClient<ICartClient, CartClient>(client =>
+        {
+            var cartApiUrl = builder.Configuration["ServiceUrls:CartAPI"]!;
+            client.BaseAddress = new Uri(cartApiUrl);
+        });
+
+        builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+        builder.Services.AddHttpClient<ExchangeRateService>();
+        builder.Services.AddMemoryCache();
+
+        builder.Services.AddScoped<IExchangeRateService, ExchangeRateService>();
+        builder.Services.AddScoped<IExchangeRateHelper, ExchangeRateHelper>();
+
+        builder.Services.AddScoped<IOrderMapHelper, OrderMapHelper>();
         builder.Services.AddScoped<IOrderService, OrderService>();
 
         var JWTSettings = builder.Configuration.GetSection("JWT");
